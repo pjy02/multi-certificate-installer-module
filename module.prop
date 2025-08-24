@@ -1,7 +1,7 @@
 id=multi-cert-installer
 name=多证书安装器
-version=v1.0.5
-versionCode=7
+version=v1.0.6
+versionCode=8
 author=自定义
 description=将system/etc/security/cacerts目录中的所有CA证书安装到系统证书存储中。
 updateJson=https://example.com/multi-cert-installer.json
