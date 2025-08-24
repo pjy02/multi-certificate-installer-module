@@ -1,0 +1,126 @@
+name: Advanced Auto Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.1.0)'
+        required: true
+        default: 'v1.0.0'
+      bump_type:
+        description: 'Version bump type'
+        required: false
+        default: 'patch'
+        type: choice
+        options:
+        - patch
+        - minor
+        - major
+
+jobs:
+  release:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Extract version info
+      id: version
+      run: |
+        if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+          $version = "${{ github.event.inputs.version }}"
+        } else {
+          $version = "${{ github.ref_name }}"
+        }
+        echo "version=$version" >> $env:GITHUB_OUTPUT
+        echo "VERSION=$version" >> $env:GITHUB_ENV
+        
+    - name: Read current version from module.prop
+      id: current_version
+      run: |
+        $content = Get-Content "module.prop"
+        $currentVersion = ($content | Where-Object { $_ -match "^version=" }) -replace "^version=", ""
+        $currentVersionCode = ($content | Where-Object { $_ -match "^versionCode=" }) -replace "^versionCode=", ""
+        echo "current_version=$currentVersion" >> $env:GITHUB_OUTPUT
+        echo "current_version_code=$currentVersionCode" >> $env:GITHUB_OUTPUT
+        
+    - name: Bump version code
+      id: bump_version
+      run: |
+        $newVersionCode = [int]"${{ steps.current_version.outputs.current_version_code }}" + 1
+        echo "new_version_code=$newVersionCode" >> $env:GITHUB_OUTPUT
+        
+    - name: Update module.prop
+      run: |
+        $content = Get-Content "module.prop"
+        $newContent = $content | ForEach-Object {
+          if ($_ -match "^version=") {
+            "version=${{ env.VERSION }}"
+          } elseif ($_ -match "^versionCode=") {
+            "versionCode=${{ steps.bump_version.outputs.new_version_code }}"
+          } else {
+            $_
+          }
+        }
+        $newContent | Set-Content "module.prop"
+        
+    - name: Commit version update
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add module.prop
+        git commit -m "Bump version to ${{ env.VERSION }}" || exit 0
+        git push
+        
+    - name: Create zip archive
+      run: |
+        Compress-Archive -Path * -DestinationPath "multi-certificate-installer-${{ env.VERSION }}.zip" -Force
+        
+    - name: Generate update.json
+      run: |
+        $updateJson = @{
+          version = "${{ env.VERSION }}"
+          versionCode = "${{ steps.bump_version.outputs.new_version_code }}"
+          zipUrl = "${{ github.server_url }}/${{ github.repository }}/releases/download/${{ env.VERSION }}/multi-certificate-installer-${{ env.VERSION }}.zip"
+          changelog = "自动发布版本 ${{ env.VERSION }}"
+          releaseDate = Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ"
+        } | ConvertTo-Json -Depth 10
+        $updateJson | Set-Content "update.json"
+        
+    - name: Commit update.json
+      run: |
+        git add update.json
+        git commit -m "Update update.json for version ${{ env.VERSION }}" || exit 0
+        git push
+        
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: "多证书安装器 ${{ env.VERSION }}"
+        body_path: README.md
+        files: |
+          multi-certificate-installer-${{ env.VERSION }}.zip
+          update.json
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Create tag if manual trigger
+      if: github.event_name == 'workflow_dispatch'
+      run: |
+        git tag ${{ env.VERSION }}
+        git push origin ${{ env.VERSION }}

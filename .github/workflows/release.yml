@@ -1,0 +1,44 @@
+name: Auto Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Read version from module.prop
+      id: version
+      run: |
+        $content = Get-Content "module.prop"
+        $version = ($content | Where-Object { $_ -match "^version=" }) -replace "^version=", ""
+        echo "version=$version" >> $env:GITHUB_OUTPUT
+        
+    - name: Create zip archive
+      run: |
+        Compress-Archive -Path * -DestinationPath "multi-certificate-installer-${{ steps.version.outputs.version }}.zip" -Force
+        
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: "多证书安装器 ${{ steps.version.outputs.version }}"
+        body_path: README.md
+        files: |
+          multi-certificate-installer-${{ steps.version.outputs.version }}.zip
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
