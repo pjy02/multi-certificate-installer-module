@@ -26,7 +26,10 @@ git push origin v1.1
 - 支持手动触发发布
 - 自动版本号递增
 
-**注意：** 需要GitHub Actions有写入权限
+**权限配置：**
+- 已内置 `permissions: contents: write` 配置
+- 自动配置Git用户信息
+- 仅推送到main分支（避免master分支错误）
 
 **触发方式：**
 
@@ -194,7 +197,14 @@ fatal: unable to access 'https://github.com/[repository]/': The requested URL re
 3. 确保"Allow GitHub Actions to create and approve pull requests"已启用
 4. 重新运行工作流
 
-**方案三：手动流程**
+**方案三：使用修复后的高级版工作流**
+1. 高级版工作流已更新，包含以下修复：
+   - 添加了 `permissions: contents: write` 配置
+   - 移除了对master分支的引用，仅使用main分支
+   - 改进了错误处理，推送失败时不会中断流程
+2. 重新运行工作流
+
+**方案四：手动流程**
 1. 运行setup-automation.ps1脚本更新版本
 2. 手动推送更改到仓库
 3. 创建标签触发发布

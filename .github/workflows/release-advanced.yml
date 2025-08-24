@@ -23,7 +23,9 @@ on:
 jobs:
   release:
     runs-on: windows-latest
-    
+    permissions:
+      contents: write
+      
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -85,7 +87,7 @@ jobs:
       run: |
         git add module.prop
         git commit -m "Bump version to ${{ env.VERSION }}" || exit 0
-        git push origin main || git push origin master || echo "Push failed, continuing..."
+        git push origin main || echo "Push failed, continuing..."
         
     - name: Create zip archive
       run: |
@@ -106,7 +108,7 @@ jobs:
       run: |
         git add update.json
         git commit -m "Update update.json for version ${{ env.VERSION }}" || exit 0
-        git push origin main || git push origin master || echo "Push failed, continuing..."
+        git push origin main || echo "Push failed, continuing..."
         
     - name: Create Release
       uses: softprops/action-gh-release@v1
