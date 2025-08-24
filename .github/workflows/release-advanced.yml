@@ -110,6 +110,13 @@ jobs:
         git commit -m "Update update.json for version ${{ env.VERSION }}" || exit 0
         git push origin main || echo "Push failed, continuing..."
         
+    - name: Create and push tag
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git tag ${{ env.VERSION }}
+        git push origin ${{ env.VERSION }}
+        
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
@@ -123,9 +130,3 @@ jobs:
         generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        
-    - name: Create tag if manual trigger
-      if: github.event_name == 'workflow_dispatch'
-      run: |
-        git tag ${{ env.VERSION }}
-        git push origin ${{ env.VERSION }}

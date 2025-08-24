@@ -209,7 +209,25 @@ fatal: unable to access 'https://github.com/[repository]/': The requested URL re
 2. 手动推送更改到仓库
 3. 创建标签触发发布
 
-#### 3. 标签推送失败
+#### 3. GitHub Releases需要标签错误
+**错误信息：**
+```
+⚠️ GitHub Releases requires a tag
+```
+
+**原因分析：**
+- GitHub Releases要求必须存在对应的Git标签
+- 工作流尝试创建Release时，标签尚未创建和推送
+
+**解决方案：**
+- **已修复：** 两个工作流文件都已更新，在创建Release步骤之前添加了标签创建和推送步骤
+- 修复内容包括：
+  - 配置Git用户信息（github-actions[bot]）
+  - 创建版本标签：`git tag ${{ env.VERSION }}`
+  - 推送标签到仓库：`git push origin ${{ env.VERSION }}`
+  - 确保标签创建在Release步骤之前执行
+
+#### 4. 标签推送失败
 **解决方案：**
 ```bash
 # 确保本地标签已创建

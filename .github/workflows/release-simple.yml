@@ -60,6 +60,13 @@ jobs:
         } | ConvertTo-Json -Depth 10
         $updateJson | Set-Content "update.json"
         
+    - name: Create and push tag
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git tag ${{ env.VERSION }}
+        git push origin ${{ env.VERSION }}
+        
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
