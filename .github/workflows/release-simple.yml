@@ -47,11 +47,16 @@ jobs:
     - name: Create zip archive
       run: |
         mkdir module-package
-        copy-item -path "META-INF" -destination "module-package\META-INF" -recurse
-        copy-item -path "post-fs-data.sh" -destination "module-package\post-fs-data.sh"
-        copy-item -path "module.prop" -destination "module-package\module.prop"
-        copy-item -path "README.md" -destination "module-package\README.md"
-        Compress-Archive -Path "module-package\*" -DestinationPath "multi-certificate-installer-${{ env.VERSION }}.zip" -Force
+        # 复制META-INF目录结构
+        mkdir module-package\META-INF\com\google\android
+        copy-item "META-INF\com\google\android\update-binary" "module-package\META-INF\com\google\android\update-binary"
+        copy-item "META-INF\com\google\android\updater-script" "module-package\META-INF\com\google\android\updater-script"
+        # 复制其他必要文件
+        copy-item "post-fs-data.sh" "module-package\post-fs-data.sh"
+        copy-item "module.prop" "module-package\module.prop"
+        copy-item "README.md" "module-package\README.md"
+        # 打包指定文件
+        Compress-Archive -Path "module-package\META-INF", "module-package\post-fs-data.sh", "module-package\module.prop", "module-package\README.md" -DestinationPath "multi-certificate-installer-${{ steps.version.outputs.version }}.zip" -Force
         remove-item -path "module-package" -recurse -force
         
     - name: Generate update.json
