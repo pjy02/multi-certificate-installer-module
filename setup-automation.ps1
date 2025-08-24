@@ -20,10 +20,12 @@ if (-not (Test-Path ".git")) {
 try {
     $ghVersion = gh --version
     Write-Host "✅ 检测到GitHub CLI: $ghVersion" -ForegroundColor Green
+    $ghAvailable = $true
 } catch {
     Write-Host "⚠️  警告：未检测到GitHub CLI" -ForegroundColor Yellow
     Write-Host "建议安装GitHub CLI以获得更好的体验" -ForegroundColor Yellow
     Write-Host "下载地址：https://cli.github.com/" -ForegroundColor Cyan
+    $ghAvailable = $false
 }
 
 # 检查工作流文件
@@ -63,6 +65,37 @@ $currentVersionCode = ($modulePropContent | Where-Object { $_ -match "^versionCo
 Write-Host "📋 当前版本信息：" -ForegroundColor Cyan
 Write-Host "   版本号: $currentVersion" -ForegroundColor White
 Write-Host "   版本代码: $currentVersionCode" -ForegroundColor White
+
+# 更新module.prop
+Write-Host "🔄 更新module.prop文件" -ForegroundColor Cyan
+
+try {
+    $newVersionCode = [int]$currentVersionCode + 1
+    $content = Get-Content "module.prop"
+    $newContent = $content | ForEach-Object {
+        if ($_ -match "^version=") {
+            "version=$Version"
+        } elseif ($_ -match "^versionCode=") {
+            "versionCode=$newVersionCode"
+        } else {
+            $_
+        }
+    }
+    $newContent | Set-Content "module.prop"
+    Write-Host "✅ module.prop更新成功" -ForegroundColor Green
+    Write-Host "   新版本号: $Version" -ForegroundColor White
+    Write-Host "   新版本代码: $newVersionCode" -ForegroundColor White
+    
+    # 提交更改
+    Write-Host "📤 提交版本更新" -ForegroundColor Cyan
+    git add module.prop
+    git commit -m "Bump version to $Version"
+    Write-Host "✅ 版本更新已提交" -ForegroundColor Green
+} catch {
+    Write-Host "❌ module.prop更新失败" -ForegroundColor Red
+    Write-Host $_ -ForegroundColor Red
+    exit 1
+}
 
 # 检查是否有未提交的更改
 $gitStatus = git status --porcelain
@@ -113,10 +146,28 @@ Write-Host "   3. 等待自动发布完成" -ForegroundColor White
 Write-Host "   4. 在Releases页面验证发布结果" -ForegroundColor White
 Write-Host "" -ForegroundColor White
 Write-Host "🔗 有用的链接：" -ForegroundColor Cyan
-Write-Host "   - GitHub Actions: https://github.com/$(git remote get-url origin | Split-Path -Leaf)/actions" -ForegroundColor White
-Write-Host "   - Releases: https://github.com/$(git remote get-url origin | Split-Path -Leaf)/releases" -ForegroundColor White
+if ($ghAvailable) {
+    try {
+        $repoUrl = git remote get-url origin
+        $repoName = $repoUrl -replace '.*github.com[:/](.*?)(\.git)?$', '$1'
+        Write-Host "   - GitHub Actions: https://github.com/$repoName/actions" -ForegroundColor White
+        Write-Host "   - Releases: https://github.com/$repoName/releases" -ForegroundColor White
+    } catch {
+        Write-Host "   - GitHub Actions: [仓库URL]/actions" -ForegroundColor White
+        Write-Host "   - Releases: [仓库URL]/releases" -ForegroundColor White
+    }
+} else {
+    Write-Host "   - GitHub Actions: [仓库URL]/actions" -ForegroundColor White
+    Write-Host "   - Releases: [仓库URL]/releases" -ForegroundColor White
+}
 Write-Host "" -ForegroundColor White
 Write-Host "📚 更多信息请参考：.github/AUTOMATION.md" -ForegroundColor Cyan
+Write-Host "" -ForegroundColor White
+Write-Host "⚠️  重要提示：" -ForegroundColor Yellow
+Write-Host "   如果GitHub Actions因权限问题失败，请：" -ForegroundColor White
+Write-Host "   1. 检查仓库设置 > Actions > General" -ForegroundColor White
+Write-Host "   2. 确保'Workflow permissions'设置为'Read and write permissions'" -ForegroundColor White
+Write-Host "   3. 或者使用简化版工作流'release-simple.yml'" -ForegroundColor White
 
 # 询问是否要查看工作流状态
 $response = Read-Host "是否现在查看工作流状态？(y/N)"

@@ -26,6 +26,8 @@ git push origin v1.1
 - 支持手动触发发布
 - 自动版本号递增
 
+**注意：** 需要GitHub Actions有写入权限
+
 **触发方式：**
 
 #### 方式一：标签触发（推荐）
@@ -41,6 +43,25 @@ git push origin v1.2.0
 3. 点击"Run workflow"
 4. 填写版本号和其他参数
 
+### 3. 简化版 - `release-simple.yml` (推荐)
+**功能：**
+- 自动检测版本标签并打包
+- 创建GitHub Release
+- 上传zip文件和update.json
+- 显示版本更新信息（需要手动更新）
+
+**优势：**
+- 不需要写入权限
+- 更稳定的执行
+- 适合大多数使用场景
+
+**触发方式：**
+```bash
+# 推送版本标签
+git tag v1.3.0
+git push origin v1.3.0
+```
+
 ## 使用步骤
 
 ### 1. 首次设置
@@ -52,9 +73,16 @@ git push origin v1.2.0
 4. 保存设置
 
 #### 配置仓库权限
+**对于简化版工作流（推荐）：**
+- 保持默认权限设置即可
+- 不需要特殊权限配置
+
+**对于高级版工作流：**
 1. 进入仓库设置 > Actions > General
 2. 确保"Workflow permissions"设置为"Read and write permissions"
 3. 确保"Allow GitHub Actions to create and approve pull requests"已启用
+
+> 💡 **推荐使用简化版工作流** `release-simple.yml`，它不需要特殊权限，更稳定可靠。
 
 ### 2. 准备发布
 
@@ -145,13 +173,31 @@ github action workflows
 #### 2. 权限错误
 **错误信息：**
 ```
-Error: Resource not accessible by integration
+Permission to [repository].git denied to github-actions[bot]
+fatal: unable to access 'https://github.com/[repository]/': The requested URL returned error: 403
 ```
 
+**原因分析：**
+- GitHub Actions默认没有写入权限
+- 高级版工作流尝试推送更改到仓库
+
 **解决方案：**
+
+**方案一：使用简化版工作流（推荐）**
+1. 切换到 `release-simple.yml` 工作流
+2. 手动更新module.prop版本信息
+3. 使用setup-automation.ps1脚本自动更新
+
+**方案二：配置写入权限**
 1. 进入仓库设置 > Actions > General
 2. 设置"Workflow permissions"为"Read and write permissions"
 3. 确保"Allow GitHub Actions to create and approve pull requests"已启用
+4. 重新运行工作流
+
+**方案三：手动流程**
+1. 运行setup-automation.ps1脚本更新版本
+2. 手动推送更改到仓库
+3. 创建标签触发发布
 
 #### 3. 标签推送失败
 **解决方案：**
@@ -199,6 +245,8 @@ gh run view <run-id> --log
 - [ ] 所有功能测试通过
 - [ ] 证书目录结构正确
 - [ ] 工作流文件语法正确
+- [ ] 选择合适的工作流（推荐使用简化版）
+- [ ] 权限配置正确（如使用高级版）
 
 ### 发布后验证
 - [ ] Release创建成功
@@ -206,6 +254,7 @@ gh run view <run-id> --log
 - [ ] update.json生成正确
 - [ ] 下载链接有效
 - [ ] 版本号正确递增
+- [ ] 检查工作流执行日志无错误
 
 ## 联系支持
 如果遇到问题，请：
