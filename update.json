@@ -1,7 +1,7 @@
 {
-  "versionCode": "4",
-  "zipUrl": "https://github.com/pjy02/multi-certificate-installer-module/releases/download/v1.0.1/multi-certificate-installer-v1.0.1.zip",
-  "releaseDate": "2025-08-24T17:35:00Z",
-  "version": "v1.0.1",
-  "changelog": "自动发布版本 v1.0.1"
+  "changelog": "自动发布版本 v1.0.2",
+  "zipUrl": "https://github.com/pjy02/multi-certificate-installer-module/releases/download/v1.0.2/multi-certificate-installer-v1.0.2.zip",
+  "versionCode": "5",
+  "version": "v1.0.2",
+  "releaseDate": "2025-08-24T17:41:18Z"
 }
