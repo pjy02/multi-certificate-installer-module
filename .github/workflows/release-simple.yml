@@ -46,7 +46,7 @@ jobs:
         
     - name: Create zip archive
       run: |
-        Compress-Archive -Path * -DestinationPath "multi-certificate-installer-${{ env.VERSION }}.zip" -Force
+        Compress-Archive -Path "META-INF", "post-fs-data.sh", "module.prop", "README.md" -DestinationPath "multi-certificate-installer-${{ env.VERSION }}.zip" -Force
         
     - name: Generate update.json
       run: |
