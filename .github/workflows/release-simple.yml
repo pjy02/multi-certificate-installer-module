@@ -46,7 +46,13 @@ jobs:
         
     - name: Create zip archive
       run: |
-        Compress-Archive -Path "META-INF", "post-fs-data.sh", "module.prop", "README.md" -DestinationPath "multi-certificate-installer-${{ env.VERSION }}.zip" -Force
+        mkdir module-package
+        copy-item -path "META-INF" -destination "module-package\META-INF" -recurse
+        copy-item -path "post-fs-data.sh" -destination "module-package\post-fs-data.sh"
+        copy-item -path "module.prop" -destination "module-package\module.prop"
+        copy-item -path "README.md" -destination "module-package\README.md"
+        Compress-Archive -Path "module-package\*" -DestinationPath "multi-certificate-installer-${{ env.VERSION }}.zip" -Force
+        remove-item -path "module-package" -recurse -force
         
     - name: Generate update.json
       run: |
